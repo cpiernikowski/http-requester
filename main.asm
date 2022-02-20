@@ -92,10 +92,12 @@ MainEntry:
 
 
 WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
-    LOCAL       WndClass    : WNDCLASSEX
-    LOCAL       Msg         : MSG
-    LOCAL       hwnd        : HWND
+    LOCAL       WndClass:WNDCLASSEX
+    LOCAL       Msg:MSG
+    LOCAL       hwnd:HWND
 
+
+; Draw main window
     mov         WndClass.cbSize, SIZEOF WNDCLASSEX
     mov         WndClass.style, CS_HREDRAW or CS_VREDRAW
     mov         WndClass.lpfnWndProc, OFFSET WndProc
@@ -137,6 +139,8 @@ WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     call        CreateWindowExA
     mov         hwnd, eax
 
+
+; Draw controls
     push        NULL
     push        NULL
     push        NULL
@@ -212,6 +216,8 @@ WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     call        CreateWindowExA
     mov         TxtBoxMethod, eax
 
+
+; Set a nicer font for all of the controls
     push        OFFSET FontArialStr
     push        DEFAULT_PITCH or FF_SWISS
     push        DEFAULT_QUALITY
@@ -250,6 +256,8 @@ WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     push        ebx
     call        SetCtrlFont
 
+
+; Handle incoming messages
 MsgLoop:
     push        0
     push        0
@@ -289,10 +297,14 @@ SetCtrlFont endp
 
 
 WndProc proc hwnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
-    LOCAL       ps        : PAINTSTRUCT
-    LOCAL       rect      : RECT
-    LOCAL       hdc       : HDC
-    LOCAL       FontArial : HFONT
+    LOCAL       ps:PAINTSTRUCT
+    LOCAL       rect:RECT
+    LOCAL       hdc:HDC
+    LOCAL       TxtBoxURLInput[128]:BYTE
+    LOCAL       TxtBoxMethodInput[32]:BYTE
+    LOCAL       TxtFieldRequestInput[4096]:BYTE
+    LOCAL       TxtFieldResponseOutput[4096]:BYTE
+
 
     cmp         uMsg, WM_PAINT
     je          MsgEqWM_PAINT
@@ -310,6 +322,7 @@ WndProc proc hwnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     call        DefWindowProc
     ret
 
+
 MsgEqWM_PAINT:
     lea         eax, ps
     push        eax
@@ -326,6 +339,8 @@ MsgEqWM_PAINT:
     push        hdc
     call        SetBkMode
 
+
+; Create a font for labels
     push        OFFSET FontArialStr
     push        DEFAULT_PITCH or FF_SWISS
     push        DEFAULT_QUALITY
@@ -341,12 +356,13 @@ MsgEqWM_PAINT:
     push        0
     push        18
     call        CreateFont
-    mov         FontArial, eax
 
-    push        FontArial
+    push        eax
     push        hdc
     call        SelectObject
 
+
+; Draw labels
     lea         ebx, rect
 
     mov         rect.left, 50
@@ -389,29 +405,58 @@ MsgEqWM_PAINT:
     call        EndPaint
     jmp         WndProcDefRet
 
+
 MsgEqWM_COMMAND:
+; Check if ButtonPerform was clicked
     cmp         wParam, BN_CLICKED
-    jne         BtnNotClicked
+    jne         WndProcDefRet
 
     mov         eax, lParam
     cmp         eax, ButtonPerform
-    jne         BtnNotClicked
-
-    ; do the work...
-    push MB_OK
-    push 0
-    push 0
-    push 0
-    call MessageBoxA
+    jne         WndProcDefRet               ; only command supposed to be handled in this app is a ButtonPerform click event
 
 
-BtnNotClicked:
+; Get the data required to perform the HTTP request
+    push        128
+    lea         eax, TxtBoxURLInput
+    push        eax
+    push        TxtBoxURL
+    call        GetWindowText
+    mov         TxtBoxURLInput[127], 0      ; null terminates the string on the last index in case the control's text was too long to include the null terminator
+
+    push        32
+    lea         eax, TxtBoxMethodInput
+    push        eax
+    push        TxtBoxMethod
+    call        GetWindowText
+    mov         TxtBoxMethodInput[31], 0
+
+    push        4096
+    lea         eax, TxtFieldRequestInput
+    push        TxtFieldRequest
+    call        GetWindowText
+    mov         TxtFieldRequestInput[4095], 0
+
+
+; Perform the HTTP request
+
+
+
+    push        0
+    push        0
+    lea         eax, TxtBoxMethodInput
+    push        eax
+    push        0
+    call        MessageBox
+
+
     jmp         WndProcDefRet
+
 
 MsgEqWM_DESTROY:
     push        0
     call        PostQuitMessage
-    jmp         WndProcDefRet
+
 
 WndProcDefRet:
     xor         eax, eax
