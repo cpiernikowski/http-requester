@@ -16,6 +16,7 @@ includelib      \masm32\lib\ws2_32.lib
 
 
 WinMain proto :DWORD, :DWORD, :DWORD, :DWORD
+extern PerformRequest :proc
 
 
 WindowWidth            equ 600
@@ -46,6 +47,17 @@ TxtBoxMethodHeight     equ 30
 TxtBoxMethodPosX       equ 50 + ButtonPerformWidth + 30
 TxtBoxMethodPosY       equ ButtonPerformPosY
 
+ADDRINFO struct
+	ai_flags	DWORD ?
+	ai_family	DWORD ?
+	ai_socktype	DWORD ?
+	ai_protocol	DWORD ?
+	ai_addrlen	QWORD ?
+	ai_canonname	LPVOID ?
+	ai_addr		LPVOID ?
+	ai_next		LPVOID ?
+ADDRINFO ENDS
+
 
 .DATA
 ClassName              db "api-tester", 0
@@ -58,6 +70,10 @@ TxtFieldResponseLabel  db "Response", 0
 TxtFieldRequestLabel   db "Request", 0
 TxtBoxURLLabel         db "URL", 0
 TxtBoxMethodLabel      db "Method", 0
+WSAErrorText           db "WSA Error", 0
+
+; TEST VAR
+TESTVAR_URL            db "www.httpbin.org", 0
 
 
 .DATA?
@@ -300,10 +316,17 @@ WndProc proc hwnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL       ps:PAINTSTRUCT
     LOCAL       rect:RECT
     LOCAL       hdc:HDC
+
     LOCAL       TxtBoxURLInput[128]:BYTE
     LOCAL       TxtBoxMethodInput[32]:BYTE
     LOCAL       TxtFieldRequestInput[4096]:BYTE
     LOCAL       TxtFieldResponseOutput[4096]:BYTE
+
+    LOCAL       WsaData:WSADATA ; word, word
+    LOCAL       pAddrInfoResult:LPVOID ; ptr
+    LOCAL       pAddrInfoPtr:LPVOID
+    LOCAL       AddrInfoHints:ADDRINFO ; i,i,i,i,i,ptr,ptr,ptr
+    LOCAL       Socket:SOCKET
 
 
     cmp         uMsg, WM_PAINT
@@ -422,40 +445,39 @@ MsgEqWM_COMMAND:
     push        eax
     push        TxtBoxURL
     call        GetWindowText
-    mov         TxtBoxURLInput[127], 0      ; null terminates the string on the last index in case the control's text was too long to include the null terminator
+    mov         TxtBoxURLInput + 127, 0      ; null terminates the string on the last index in case the control's text was too long to include the null terminator
 
     push        32
     lea         eax, TxtBoxMethodInput
     push        eax
     push        TxtBoxMethod
     call        GetWindowText
-    mov         TxtBoxMethodInput[31], 0
+    mov         TxtBoxMethodInput + 31, 0
 
     push        4096
     lea         eax, TxtFieldRequestInput
     push        TxtFieldRequest
     call        GetWindowText
-    mov         TxtFieldRequestInput[4095], 0
+    mov         TxtFieldRequestInput + 4095, 0
 
 
 ; Perform the HTTP request
-
-
-
+    call        PerformRequest
     push        0
     push        0
-    lea         eax, TxtBoxMethodInput
     push        eax
     push        0
     call        MessageBox
 
 
-    jmp         WndProcDefRet
 
+    jmp WndProcDefRet
 
 MsgEqWM_DESTROY:
     push        0
     call        PostQuitMessage
+    jmp         WndProcDefRet
+
 
 
 WndProcDefRet:

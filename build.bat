@@ -1,2 +1,3 @@
 /masm32/bin/ml /c /coff main.asm
-/masm32/bin/link /SUBSYSTEM:WINDOWS main.obj
+cl /EHsc main.obj networking.c
+/masm32/bin/link /SUBSYSTEM:WINDOWS main.obj networking.obj
