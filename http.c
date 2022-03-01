@@ -21,8 +21,8 @@ static inline void mem_cpy(register unsigned char* dest,
 }
 
 static inline void fwd_app_str(char** in_out_it,
-                          const char* src,
-                          unsigned int len) {
+                               const char* src,
+                               unsigned int len) {
     mem_cpy(*in_out_it, src, len);
     *in_out_it += len;
 }

@@ -281,8 +281,6 @@ MsgLoop:
 
 MsgLoopEnd:
     mov         eax, Msg.wParam
-
-WinMainDefRet: ; not needed anymore?
     ret
 
 WinMain endp
