@@ -14,15 +14,6 @@ static unsigned int str_len(register const char* str) {
     return i;
 }
 
-static void app_str(register char* dest,
-                    register const char* src,
-                    unsigned int count) {
-    while (*dest) ++dest;
-    for (register unsigned int i = count; *src && i--;)
-        *dest++ = *src++;
-    dest[count] = '\0';
-}
-
 // todo: inline it?
 static inline void mem_cpy(register unsigned char* dest,
                            register const unsigned char* src,
@@ -55,7 +46,7 @@ static void utoa_dec(unsigned int num, char* buf) {
     buf[i] = '\0';
 
     int start = 0, end = i - 1;
-    while (start < end) {
+    for (int start = 0, end = i - 1; start < end;) {
         i = (int)buf[start];
         buf[start++] = buf[end];
         buf[end--] = (char)i;
@@ -103,14 +94,14 @@ enum sockerr_e PerformRequest(const char* url,
         unsigned int remaining;
     } lengths; // avoid multiple calls to str_len
 
-//  char port[8]; implement this
+// todo: char port[8];
 
     resbuf = find(url, '/');
     if (resbuf > -1) {
         mem_cpy(hostname, url, resbuf);
         hostname[resbuf] = '\0';
 
-        const int buf = str_len(url) - resbuf;
+        const unsigned int buf = str_len(url) - resbuf;
         mem_cpy(path, url + resbuf, buf);
         path[buf] = '\0';
     } else {
@@ -122,8 +113,10 @@ enum sockerr_e PerformRequest(const char* url,
     resbuf = WSAStartup(MAKEWORD(2, 2), &wsa_data);
     if (resbuf != 0) return WSA_STARTUP_FAILED;
 
-    consock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); // check if equals INVALID_SOCKET
-    host = gethostbyname(hostname); // check if returned null
+    consock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (consock == INVALID_SOCKET) { WSACleanup(); return SOCKET_INIT_FAILED; }
+    host = gethostbyname(hostname);
+    if (host == NULL) { WSACleanup(); return GETHOSTBYNAME_FAILED; }
     
     sockaddr.sin_port = htons(80);
     sockaddr.sin_family = AF_INET;
