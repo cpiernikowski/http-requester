@@ -19,8 +19,9 @@ WinMain proto :DWORD, :DWORD, :DWORD, :DWORD
 extern PerformRequest :proc
 
 
+.CONST
 WindowWidth            equ 600
-WindowHeight           equ 800
+WindowHeight           equ 780
 
 TxtFieldResponseWidth  equ 500
 TxtFieldResponseHeight equ 250
@@ -47,17 +48,6 @@ TxtBoxMethodHeight     equ 30
 TxtBoxMethodPosX       equ 50 + ButtonPerformWidth + 30
 TxtBoxMethodPosY       equ ButtonPerformPosY
 
-ADDRINFO struct
-	ai_flags	DWORD ?
-	ai_family	DWORD ?
-	ai_socktype	DWORD ?
-	ai_protocol	DWORD ?
-	ai_addrlen	QWORD ?
-	ai_canonname	LPVOID ?
-	ai_addr		LPVOID ?
-	ai_next		LPVOID ?
-ADDRINFO ENDS
-
 
 .DATA
 ClassName              db "api-tester", 0
@@ -70,10 +60,6 @@ TxtFieldResponseLabel  db "Response", 0
 TxtFieldRequestLabel   db "Request", 0
 TxtBoxURLLabel         db "URL", 0
 TxtBoxMethodLabel      db "Method", 0
-WSAErrorText           db "WSA Error", 0
-
-; TEST VAR
-TESTVAR_URL            db "www.httpbin.org", 0
 
 
 .DATA?
@@ -322,12 +308,6 @@ WndProc proc hwnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL       TxtFieldRequestInput[4096]:BYTE
     LOCAL       TxtFieldResponseOutput[4096]:BYTE
 
-    LOCAL       WsaData:WSADATA ; word, word
-    LOCAL       pAddrInfoResult:LPVOID ; ptr
-    LOCAL       pAddrInfoPtr:LPVOID
-    LOCAL       AddrInfoHints:ADDRINFO ; i,i,i,i,i,ptr,ptr,ptr
-    LOCAL       Socket:SOCKET
-
 
     cmp         uMsg, WM_PAINT
     je          MsgEqWM_PAINT
@@ -440,44 +420,66 @@ MsgEqWM_COMMAND:
 
 
 ; Get the data required to perform the HTTP request
-    push        128
-    lea         eax, TxtBoxURLInput
+    ; todo: check if txtboxes aren't empty etc
+    push        TxtFieldRequest
+    call        GetWindowTextLength
+    inc         eax
     push        eax
-    push        TxtBoxURL
+    lea         eax, TxtFieldRequestInput
+    push        eax
+    push        TxtFieldRequest
     call        GetWindowText
-    mov         TxtBoxURLInput + 127, 0      ; null terminates the string on the last index in case the control's text was too long to include the null terminator
 
-    push        32
+    push        TxtBoxMethod
+    call        GetWindowTextLength
+    inc         eax
+    push        eax
     lea         eax, TxtBoxMethodInput
     push        eax
     push        TxtBoxMethod
     call        GetWindowText
-    mov         TxtBoxMethodInput + 31, 0
 
-    push        4096
-    lea         eax, TxtFieldRequestInput
-    push        TxtFieldRequest
+    push        TxtBoxURL
+    call        GetWindowTextLength
+    inc         eax
+    push        eax
+    lea         eax, TxtBoxURLInput
+    push        eax
+    push        TxtBoxURL
     call        GetWindowText
-    mov         TxtFieldRequestInput + 4095, 0
 
 
 ; Perform the HTTP request
-    call        PerformRequest
-    push        0
-    push        0
+    push        SIZEOF TxtFieldResponseOutput
+    lea         eax, TxtFieldResponseOutput
     push        eax
-    push        0
-    call        MessageBox
+    lea         eax, TxtFieldRequestInput
+    push        eax
+    lea         eax, TxtBoxMethodInput
+    push        eax
+    lea         eax, TxtBoxURLInput
+    push        eax
+    call        PerformRequest
+
+    cmp         eax, 0
+    je          PerformRequestOk
+
+    ; todo: handle errors
 
 
-
+PerformRequestOk:
+    lea         eax, TxtFieldResponseOutput
+    push        eax
+    push        TxtFieldResponse
+    call        SetWindowText
+    
     jmp WndProcDefRet
+
 
 MsgEqWM_DESTROY:
     push        0
     call        PostQuitMessage
     jmp         WndProcDefRet
-
 
 
 WndProcDefRet:

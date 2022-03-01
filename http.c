@@ -14,14 +14,13 @@ static unsigned int str_len(register const char* str) {
     return i;
 }
 
-// todo: inline it?
 static inline void mem_cpy(register unsigned char* dest,
                            register const unsigned char* src,
                            register unsigned long count) {
     while (count--) *dest++ = *src++;
 }
 
-static void frwrd_app_str(char** in_out_it,
+static inline void fwd_app_str(char** in_out_it,
                           const char* src,
                           unsigned int len) {
     mem_cpy(*in_out_it, src, len);
@@ -149,22 +148,23 @@ enum sockerr_e PerformRequest(const char* url,
     char* const req_str = HeapAlloc(GetProcessHeap(), 0ul, req_str_len);
     char* it = req_str;
 
-    frwrd_app_str(&it, method, lengths.method);
-    frwrd_app_str(&it, " ", 1);
-    frwrd_app_str(&it, path, lengths.path);
-    frwrd_app_str(&it, chunk1, lengths.chunk1);
-    frwrd_app_str(&it, hostname, lengths.hostname);
-    frwrd_app_str(&it, chunk2, lengths.chunk2);
-    frwrd_app_str(&it, content_len, lengths.content_len);
-    frwrd_app_str(&it, "\r\n\r\n", 4);
-    frwrd_app_str(&it, data, lengths.data);
-    frwrd_app_str(&it, "\r\n", 3);
+    fwd_app_str(&it, method, lengths.method);
+    fwd_app_str(&it, " ", 1);
+    fwd_app_str(&it, path, lengths.path);
+    fwd_app_str(&it, chunk1, lengths.chunk1);
+    fwd_app_str(&it, hostname, lengths.hostname);
+    fwd_app_str(&it, chunk2, lengths.chunk2);
+    fwd_app_str(&it, content_len, lengths.content_len);
+    fwd_app_str(&it, "\r\n\r\n", 4);
+    fwd_app_str(&it, data, lengths.data);
+    fwd_app_str(&it, "\r\n", 3);
 
     resbuf = send(consock, req_str, (int)req_str_len, 0);
     if (resbuf < 0) { WSACleanup(); return SEND_FAILED; }
 
-    resbuf = recv(consock, out_buf, out_buf_max_size, 0);
+    resbuf = recv(consock, out_buf, out_buf_max_size - 1, 0);
     if (resbuf < 0) { WSACleanup(); return RECV_FAILED; }
+    out_buf[resbuf] = '\0';
 
     closesocket(consock); // todo: check return
     WSACleanup();
