@@ -127,7 +127,8 @@ enum sockerr_e PerformRequest(const char* url,
                                    + str_len(url)
                                    + 8; // " ", "\r\n\r\n", "\r\n\0"
 
-    char* const req_str = HeapAlloc(GetProcessHeap(), 0ul, req_str_len);
+    HANDLE heap = GetProcessHeap();
+    char* const req_str = HeapAlloc(heap, 0ul, req_str_len);
     char* it = req_str;
 
     fwd_app_str(&it, method);
@@ -143,14 +144,15 @@ enum sockerr_e PerformRequest(const char* url,
     *it = '\0';
 
     resbuf = send(consock, req_str, (int)req_str_len, 0);
-    if (resbuf < 0) { WSACleanup(); return SEND_FAILED; }
+    if (resbuf < 0) { HeapFree(heap, 0ul, req_str); WSACleanup(); return SEND_FAILED; }
 
     resbuf = recv(consock, out_buf, out_buf_max_size - 1, 0);
-    if (resbuf < 0) { WSACleanup(); return RECV_FAILED; }
+    if (resbuf < 0) { HeapFree(heap, 0ul, req_str); WSACleanup(); return RECV_FAILED; }
     out_buf[resbuf] = '\0';
 
-    resbuf = closesocket(consock); // todo: check return
+    resbuf = closesocket(consock);
     WSACleanup();
+    HeapFree(heap, 0ul, req_str);
     if (resbuf != 0) return CLOSESOCKET_FAILED;
     
     return SOCKERR_OK;

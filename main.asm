@@ -236,7 +236,8 @@ WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     push        22
     call        CreateFont
 
-    mov         ebx, eax
+    mov         ebx, eax            ; don't store the font handle on the stack,
+                                    ; let the OS clean up the font object, because it lives throught the whole runtime
 
     push        TxtFieldResponse
     push        ebx
@@ -475,6 +476,8 @@ PerformRequestOk:
 
 
 MsgEqWM_DESTROY:
+; Destroy font
+
     push        0
     call        PostQuitMessage
     jmp         WndProcDefRet
