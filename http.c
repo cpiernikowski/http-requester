@@ -14,17 +14,18 @@ static unsigned int str_len(const char* str) {
     return i;
 }
 
-static inline void mem_cpy(unsigned char* dest,
+static void mem_cpy(unsigned char* dest,
                            const unsigned char* src,
                            unsigned int count) {
     while (count--) *dest++ = *src++;
 }
 
-static inline void fwd_app_str(char** in_out_it,
-                               const char* src,
-                               unsigned int len) {
-    mem_cpy(*in_out_it, src, len);
-    *in_out_it += len;
+static void fwd_app_str(char** in_out_it,
+                               const char* src) {
+    while (*src) {
+        **in_out_it = *src++;
+        ++*in_out_it;
+    }
 }
 
 static void utoa_dec(unsigned int num, char* buf) {
@@ -60,7 +61,8 @@ enum sockerr_e {
     CONNECT_FAILED,
     SEND_FAILED,
     SHUTDOWN_FAILED,
-    RECV_FAILED
+    RECV_FAILED,
+    CLOSESOCKET_FAILED
 };
 
 enum sockerr_e PerformRequest(const char* url,
@@ -80,18 +82,6 @@ enum sockerr_e PerformRequest(const char* url,
     char content_len[16];
     const char* const chunk1 = " HTTP/1.1\r\nConnection: close\r\nHost: ";
     const char* const chunk2 = "\r\nContent-length: ";
-
-    struct {
-        unsigned int url;
-        unsigned int method;
-        unsigned int data;
-        unsigned int path;
-        unsigned int hostname;
-        unsigned int content_len;
-        unsigned int chunk1;
-        unsigned int chunk2;
-        unsigned int remaining;
-    } lengths; // avoid multiple calls to str_len
 
 // todo: char port[8];
 
@@ -125,40 +115,33 @@ enum sockerr_e PerformRequest(const char* url,
     resbuf = connect(consock, (SOCKADDR*)(&sockaddr), sizeof(sockaddr));
     if (resbuf != 0) { WSACleanup(); return CONNECT_FAILED; }
 
-    lengths.chunk1 = str_len(chunk1);
-    lengths.chunk2 = str_len(chunk2);
-    lengths.data = str_len(data);
-    utoa_dec(lengths.data, content_len);
-    lengths.content_len = str_len(content_len);
-    lengths.hostname = str_len(hostname);
-    lengths.method = str_len(method);
-    lengths.path = str_len(path);
-    lengths.remaining = 8; // " ", "\r\n\r\n", "\r\n\0"
-    lengths.url = str_len(url);
+    resbuf = (int)str_len(data);
+    utoa_dec(resbuf, content_len);
 
-    const unsigned int req_str_len = lengths.chunk1
-                                   + lengths.chunk2
-                                   + lengths.content_len
-                                   + lengths.data
-                                   + lengths.hostname
-                                   + lengths.method
-                                   + lengths.path
-                                   + lengths.url
-                                   + lengths.remaining;
+    const unsigned int req_str_len = str_len(chunk1)
+                                   + str_len(chunk2)
+                                   + str_len(content_len)
+                                   + resbuf
+                                   + str_len(hostname)
+                                   + str_len(method)
+                                   + str_len(path)
+                                   + str_len(url)
+                                   + 8; // " ", "\r\n\r\n", "\r\n\0"
 
     char* const req_str = HeapAlloc(GetProcessHeap(), 0ul, req_str_len);
     char* it = req_str;
 
-    fwd_app_str(&it, method, lengths.method);
-    fwd_app_str(&it, " ", 1);
-    fwd_app_str(&it, path, lengths.path);
-    fwd_app_str(&it, chunk1, lengths.chunk1);
-    fwd_app_str(&it, hostname, lengths.hostname);
-    fwd_app_str(&it, chunk2, lengths.chunk2);
-    fwd_app_str(&it, content_len, lengths.content_len);
-    fwd_app_str(&it, "\r\n\r\n", 4);
-    fwd_app_str(&it, data, lengths.data);
-    fwd_app_str(&it, "\r\n", 3);
+    fwd_app_str(&it, method);
+    fwd_app_str(&it, " ");
+    fwd_app_str(&it, path);
+    fwd_app_str(&it, chunk1);
+    fwd_app_str(&it, hostname);
+    fwd_app_str(&it, chunk2);
+    fwd_app_str(&it, content_len);
+    fwd_app_str(&it, "\r\n\r\n");
+    fwd_app_str(&it, data);
+    fwd_app_str(&it, "\r\n");
+    *it = '\0';
 
     resbuf = send(consock, req_str, (int)req_str_len, 0);
     if (resbuf < 0) { WSACleanup(); return SEND_FAILED; }
@@ -167,8 +150,9 @@ enum sockerr_e PerformRequest(const char* url,
     if (resbuf < 0) { WSACleanup(); return RECV_FAILED; }
     out_buf[resbuf] = '\0';
 
-    closesocket(consock); // todo: check return
+    resbuf = closesocket(consock); // todo: check return
     WSACleanup();
+    if (resbuf != 0) return CLOSESOCKET_FAILED;
     
     return SOCKERR_OK;
 }
