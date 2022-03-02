@@ -15,13 +15,13 @@ static unsigned int str_len(const char* str) {
 }
 
 static void mem_cpy(unsigned char* dest,
-                           const unsigned char* src,
-                           unsigned int count) {
+                    const unsigned char* src,
+                    unsigned int count) {
     while (count--) *dest++ = *src++;
 }
 
 static void fwd_app_str(char** in_out_it,
-                               const char* src) {
+                        const char* src) {
     while (*src) {
         **in_out_it = *src++;
         ++*in_out_it;
@@ -45,7 +45,6 @@ static void utoa_dec(unsigned int num, char* buf) {
 
     buf[i] = '\0';
 
-    int start = 0, end = i - 1;
     for (int start = 0, end = i - 1; start < end;) {
         i = (int)buf[start];
         buf[start++] = buf[end];
