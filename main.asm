@@ -60,6 +60,8 @@ TxtFieldResponseLabel  db "Response", 0
 TxtFieldRequestLabel   db "Request", 0
 TxtBoxURLLabel         db "URL", 0
 TxtBoxMethodLabel      db "Method", 0
+ErrorInMissingCaption  db "Error occured", 0
+ErrorInMissingText     db "You have to input required info (URL, method) in order to perform a request", 0
 
 
 .DATA?
@@ -419,18 +421,12 @@ MsgEqWM_COMMAND:
 
 
 ; Get the data required to perform the HTTP request
-    ; todo: check if txtboxes aren't empty etc
-    push        TxtFieldRequest
-    call        GetWindowTextLength
-    inc         eax
-    push        eax
-    lea         eax, TxtFieldRequestInput
-    push        eax
-    push        TxtFieldRequest
-    call        GetWindowText
-
     push        TxtBoxMethod
     call        GetWindowTextLength
+
+    cmp         eax, 0
+    je          ErrorInputMissing
+
     inc         eax
     push        eax
     lea         eax, TxtBoxMethodInput
@@ -440,6 +436,19 @@ MsgEqWM_COMMAND:
 
     push        TxtBoxURL
     call        GetWindowTextLength
+
+    cmp         eax, 0
+    jne         URLAndMethodPresent
+
+ErrorInputMissing:
+    push        MB_OK
+    push        OFFSET ErrorInMissingCaption
+    push        OFFSET ErrorInMissingText
+    push        NULL
+    call        MessageBox
+    jmp         WndProcDefRet
+
+URLAndMethodPresent:
     inc         eax
     push        eax
     lea         eax, TxtBoxURLInput
@@ -447,8 +456,25 @@ MsgEqWM_COMMAND:
     push        TxtBoxURL
     call        GetWindowText
 
+    push        TxtFieldRequest
+    call        GetWindowTextLength
+
+    cmp         eax, 0
+    ja          RequestPresent
+
+    mov         TxtFieldRequestInput, 0         ; put the null terminator at the beginning of the string if TxtFieldRequest is empty
+    jmp         Perform
+
+RequestPresent:
+    inc         eax
+    push        eax
+    lea         eax, TxtFieldRequestInput
+    push        eax
+    push        TxtFieldRequest
+    call        GetWindowText
 
 ; Perform the HTTP request
+Perform:
     push        SIZEOF TxtFieldResponseOutput
     lea         eax, TxtFieldResponseOutput
     push        eax
@@ -465,7 +491,6 @@ MsgEqWM_COMMAND:
 
     ; todo: handle errors
 
-
 PerformRequestOk:
     lea         eax, TxtFieldResponseOutput
     push        eax
@@ -478,8 +503,7 @@ PerformRequestOk:
 MsgEqWM_DESTROY:
     push        0
     call        PostQuitMessage
-    jmp         WndProcDefRet
-
+ 
 
 WndProcDefRet:
     xor         eax, eax
