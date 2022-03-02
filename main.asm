@@ -60,8 +60,16 @@ TxtFieldResponseLabel  db "Response", 0
 TxtFieldRequestLabel   db "Request", 0
 TxtBoxURLLabel         db "URL", 0
 TxtBoxMethodLabel      db "Method", 0
-ErrorInMissingCaption  db "An error occured", 0
-ErrorInMissingText     db "You have to input required info (URL, method) in order to perform a request", 0
+CaptionError           db "Error", 0
+CaptionWarning         db "Warning", 0
+MsgInputMissing        db "You have to input required info (URL, method) in order to perform a request", 0
+MsgWSAStartupFailed    db "Couldn't perform the request: WSAStartup() failed", 0
+MsgGetHostByNameFailed db "Couldn't perform the request: gethostbyname() failed", 0
+MsgSocketInitFailed    db "Couldn't perform the request: socket() failed", 0
+MsgConnectFailed       db "Couldn't perform the request: connect() failed", 0
+MsgSendFailed          db "Couldn't perform the request: send() failed", 0
+MsgRecvFailed          db "Error: couldn't receive response from the host - recv() failed, but data has been successfully sent to the host", 0
+MsgCloseSocketFailed   db "Warning: couldn't close the socket properly - closesocket() failed", 0
 
 
 .DATA?
@@ -423,19 +431,19 @@ MsgEqWM_COMMAND:
     push        TxtBoxMethod
     call        GetWindowTextLength
     cmp         eax, 0
-    je          ErrorInputMissing
+    jle         ErrorInputMissing
 
     mov         ebx, eax
 
     push        TxtBoxURL
     call        GetWindowTextLength
     cmp         eax, 0
-    jne         URLAndMethodPresent
+    jg          URLAndMethodPresent
 
 ErrorInputMissing:
     push        MB_OK
-    push        OFFSET ErrorInMissingCaption
-    push        OFFSET ErrorInMissingText
+    push        OFFSET CaptionError
+    push        OFFSET MsgInputMissing
     push        NULL
     call        MessageBox
     jmp         WndProcDefRet
@@ -461,7 +469,7 @@ URLAndMethodPresent:
     push        TxtFieldRequest
     call        GetWindowTextLength
     cmp         eax, 0
-    ja          RequestPresent
+    jg          RequestPresent
 
     mov         TxtFieldRequestInput, 0         ; put the null terminator at the beginning of the string if TxtFieldRequest is empty
     jmp         Perform
@@ -489,16 +497,60 @@ Perform:
 
     cmp         eax, 0
     je          PerformRequestOk
+    cmp         eax, 1
+    je          WSAStartupFailed
+    cmp         eax, 2
+    je          GetHostByNameFailed
+    cmp         eax, 3
+    je          SocketInitFailed
+    cmp         eax, 4
+    je          ConnectFailed
+    cmp         eax, 5
+    je          SendFailed
+    cmp         eax, 6
+    je          RecvFailed
+    cmp         eax, 7
+    je          CloseSocketFailed
 
-    ; todo: handle errors
+WSAStartupFailed:
+    mov         eax, OFFSET MsgWSAStartupFailed
+    jmp         PerformRequestFatalError
+GetHostByNameFailed:
+    mov         eax, OFFSET MsgGetHostByNameFailed
+    jmp         PerformRequestFatalError
+SocketInitFailed:
+    mov         eax, OFFSET MsgSocketInitFailed
+    jmp         PerformRequestFatalError
+ConnectFailed:
+    mov         eax, OFFSET MsgConnectFailed
+    jmp         PerformRequestFatalError
+SendFailed:
+    mov         eax, OFFSET MsgSendFailed
+    jmp         PerformRequestFatalError
+RecvFailed:
+    mov         eax, OFFSET MsgRecvFailed
+
+PerformRequestFatalError:
+    push        MB_OK
+    push        OFFSET CaptionError
+    push        eax
+    push        NULL
+    call        MessageBox
+    jmp         WndProcDefRet
+
+CloseSocketFailed:              ; Response received successfully - not fatal
+    push        MB_OK
+    push        OFFSET CaptionWarning
+    push        OFFSET MsgCloseSocketFailed
+    push        NULL
+    call        MessageBox
 
 PerformRequestOk:
     lea         eax, TxtFieldResponseOutput
     push        eax
     push        TxtFieldResponse
     call        SetWindowText
-    
-    jmp WndProcDefRet
+    jmp         WndProcDefRet
 
 
 MsgEqWM_DESTROY:
