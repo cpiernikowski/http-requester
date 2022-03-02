@@ -476,8 +476,6 @@ PerformRequestOk:
 
 
 MsgEqWM_DESTROY:
-; Destroy font
-
     push        0
     call        PostQuitMessage
     jmp         WndProcDefRet
