@@ -1,22 +1,22 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-static int find(register const char* str, register char c) {
-    for (register unsigned int i = 0; str[i]; ++i)
+static int find(const char* str, char c) {
+    for (int i = 0; str[i]; ++i)
         if (str[i] == c)
             return i;
     return -1;
 }
 
-static unsigned int str_len(register const char* str) {
-    register unsigned int i = 0;
+static unsigned int str_len(const char* str) {
+    unsigned int i = 0;
     while (str[i]) ++i;
     return i;
 }
 
-static inline void mem_cpy(register unsigned char* dest,
-                           register const unsigned char* src,
-                           register unsigned long count) {
+static inline void mem_cpy(unsigned char* dest,
+                           const unsigned char* src,
+                           unsigned int count) {
     while (count--) *dest++ = *src++;
 }
 
@@ -114,6 +114,7 @@ enum sockerr_e PerformRequest(const char* url,
 
     consock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (consock == INVALID_SOCKET) { WSACleanup(); return SOCKET_INIT_FAILED; }
+
     host = gethostbyname(hostname);
     if (host == NULL) { WSACleanup(); return GETHOSTBYNAME_FAILED; }
     
@@ -132,7 +133,7 @@ enum sockerr_e PerformRequest(const char* url,
     lengths.hostname = str_len(hostname);
     lengths.method = str_len(method);
     lengths.path = str_len(path);
-    lengths.remaining = 1 + 4 + 3; // " ", "\r\n\r\n", "\r\n\0"
+    lengths.remaining = 8; // " ", "\r\n\r\n", "\r\n\0"
     lengths.url = str_len(url);
 
     const unsigned int req_str_len = lengths.chunk1
