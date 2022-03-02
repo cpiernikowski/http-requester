@@ -60,7 +60,7 @@ TxtFieldResponseLabel  db "Response", 0
 TxtFieldRequestLabel   db "Request", 0
 TxtBoxURLLabel         db "URL", 0
 TxtBoxMethodLabel      db "Method", 0
-ErrorInMissingCaption  db "Error occured", 0
+ErrorInMissingCaption  db "An error occured", 0
 ErrorInMissingText     db "You have to input required info (URL, method) in order to perform a request", 0
 
 
@@ -419,24 +419,16 @@ MsgEqWM_COMMAND:
     cmp         eax, ButtonPerform
     jne         WndProcDefRet               ; only command supposed to be handled in this app is a ButtonPerform click event
 
-
-; Get the data required to perform the HTTP request
+; Check if the data required to perform the HTTP request is present
     push        TxtBoxMethod
     call        GetWindowTextLength
-
     cmp         eax, 0
     je          ErrorInputMissing
 
-    inc         eax
-    push        eax
-    lea         eax, TxtBoxMethodInput
-    push        eax
-    push        TxtBoxMethod
-    call        GetWindowText
+    mov         ebx, eax
 
     push        TxtBoxURL
     call        GetWindowTextLength
-
     cmp         eax, 0
     jne         URLAndMethodPresent
 
@@ -449,8 +441,18 @@ ErrorInputMissing:
     jmp         WndProcDefRet
 
 URLAndMethodPresent:
-    inc         eax
+; Get the data required to perform the request
+    mov         ecx, eax
+
+    inc         ebx
+    push        ebx
+    lea         eax, TxtBoxMethodInput
     push        eax
+    push        TxtBoxMethod
+    call        GetWindowText
+
+    inc         ecx
+    push        ecx
     lea         eax, TxtBoxURLInput
     push        eax
     push        TxtBoxURL
@@ -458,7 +460,6 @@ URLAndMethodPresent:
 
     push        TxtFieldRequest
     call        GetWindowTextLength
-
     cmp         eax, 0
     ja          RequestPresent
 
