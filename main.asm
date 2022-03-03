@@ -68,8 +68,8 @@ MsgGetHostByNameFailed db "Couldn't perform the request: gethostbyname() failed"
 MsgSocketInitFailed    db "Couldn't perform the request: socket() failed", 0
 MsgConnectFailed       db "Couldn't perform the request: connect() failed", 0
 MsgSendFailed          db "Couldn't perform the request: send() failed", 0
-MsgRecvFailed          db "Error: couldn't receive response from the host - recv() failed, but data has been successfully sent to the host", 0
-MsgCloseSocketFailed   db "Warning: couldn't close the socket properly - closesocket() failed", 0
+MsgRecvFailed          db "Couldn't receive response from the host - recv() failed, but data has been successfully sent to the host", 0
+MsgCloseSocketFailed   db "Couldn't close the socket properly - closesocket() failed", 0
 
 
 .DATA?
@@ -351,7 +351,6 @@ MsgEqWM_PAINT:
     push        hdc
     call        SetBkMode
 
-
 ; Create a font for labels
     push        OFFSET FontArialStr
     push        DEFAULT_PITCH or FF_SWISS
@@ -372,7 +371,6 @@ MsgEqWM_PAINT:
     push        eax
     push        hdc
     call        SelectObject
-
 
 ; Draw labels
     lea         ebx, rect

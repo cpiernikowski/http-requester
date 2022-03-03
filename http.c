@@ -59,7 +59,6 @@ enum sockerr_e {
     SOCKET_INIT_FAILED,
     CONNECT_FAILED,
     SEND_FAILED,
-    SHUTDOWN_FAILED,
     RECV_FAILED,
     CLOSESOCKET_FAILED
 };
@@ -117,10 +116,10 @@ enum sockerr_e PerformRequest(const char* url,
     resbuf = (int)str_len(data);
     utoa_dec(resbuf, content_len);
 
-    const unsigned int req_str_len = str_len(chunk1)
+    const unsigned int req_str_len = resbuf
+                                   + str_len(chunk1)
                                    + str_len(chunk2)
                                    + str_len(content_len)
-                                   + resbuf
                                    + str_len(hostname)
                                    + str_len(method)
                                    + str_len(path)
@@ -144,15 +143,15 @@ enum sockerr_e PerformRequest(const char* url,
     *it = '\0';
 
     resbuf = send(consock, req_str, (int)req_str_len, 0);
-    if (resbuf < 0) { HeapFree(heap, 0ul, req_str); WSACleanup(); return SEND_FAILED; }
+    HeapFree(heap, 0ul, req_str);
+    if (resbuf < 0) { WSACleanup(); return SEND_FAILED; }
 
     resbuf = recv(consock, out_buf, out_buf_max_size - 1, 0);
-    if (resbuf < 0) { HeapFree(heap, 0ul, req_str); WSACleanup(); return RECV_FAILED; }
+    if (resbuf < 0) { WSACleanup(); return RECV_FAILED; }
     out_buf[resbuf] = '\0';
 
     resbuf = closesocket(consock);
     WSACleanup();
-    HeapFree(heap, 0ul, req_str);
     if (resbuf != 0) return CLOSESOCKET_FAILED;
     
     return SOCKERR_OK;
