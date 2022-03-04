@@ -68,8 +68,10 @@ MsgGetHostByNameFailed db "Couldn't perform the request: gethostbyname() failed"
 MsgSocketInitFailed    db "Couldn't perform the request: socket() failed", 0
 MsgConnectFailed       db "Couldn't perform the request: connect() failed", 0
 MsgSendFailed          db "Couldn't perform the request: send() failed", 0
-MsgRecvFailed          db "Couldn't receive response from the host - recv() failed, but data has been successfully sent to the host", 0
-MsgCloseSocketFailed   db "Couldn't close the socket properly - closesocket() failed", 0
+MsgRecvFailed          db "Couldn't receive response from the host: recv() failed, but data has been successfully sent to the host", 0
+MsgCloseSocketFailed   db "Couldn't close the socket properly: closesocket() failed", 0
+MsgBugOccured          db "Couldn't perform the request: unknown error", 0
+MsgOutOfMem            db "Couldn't perform the request: HeapAlloc() failed", 0
 
 
 .DATA?
@@ -312,10 +314,10 @@ WndProc proc hwnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL       rect:RECT
     LOCAL       hdc:HDC
 
-    LOCAL       TxtBoxURLInput[128]:BYTE
-    LOCAL       TxtBoxMethodInput[32]:BYTE
     LOCAL       TxtFieldRequestInput[4096]:BYTE
     LOCAL       TxtFieldResponseOutput[4096]:BYTE
+    LOCAL       TxtBoxURLInput[128]:BYTE
+    LOCAL       TxtBoxMethodInput[32]:BYTE
 
 
     cmp         uMsg, WM_PAINT
@@ -509,6 +511,13 @@ Perform:
     je          RecvFailed
     cmp         eax, 7
     je          CloseSocketFailed
+    cmp         eax, 8
+    je          OutOfMem
+
+    ; unreachable, bug occured
+    mov         eax, OFFSET MsgBugOccured
+    jmp         PerformRequestFatalError
+
 
 WSAStartupFailed:
     mov         eax, OFFSET MsgWSAStartupFailed
@@ -527,6 +536,9 @@ SendFailed:
     jmp         PerformRequestFatalError
 RecvFailed:
     mov         eax, OFFSET MsgRecvFailed
+    jmp         PerformRequestFatalError
+OutOfMem:
+    mov         eax, OFFSET MsgOutOfMem
 
 PerformRequestFatalError:
     push        MB_OK

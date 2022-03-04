@@ -60,7 +60,8 @@ enum sockerr_e {
     CONNECT_FAILED,
     SEND_FAILED,
     RECV_FAILED,
-    CLOSESOCKET_FAILED
+    CLOSESOCKET_FAILED,
+    OUT_OF_MEM
 };
 
 enum sockerr_e PerformRequest(const char* url,
@@ -127,7 +128,8 @@ enum sockerr_e PerformRequest(const char* url,
                                    + 8; // " ", "\r\n\r\n", "\r\n\0"
 
     HANDLE heap = GetProcessHeap();
-    char* const req_str = HeapAlloc(heap, 0ul, req_str_len);
+    char* const req_str = HeapAlloc(heap, 0ul, req_str_len * sizeof(char));
+    if (req_str == NULL) return OUT_OF_MEM;
     char* it = req_str;
 
     fwd_app_str(&it, method);
