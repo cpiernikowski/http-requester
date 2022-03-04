@@ -64,6 +64,13 @@ enum sockerr_e {
     OUT_OF_MEM
 };
 
+static inline enum sockerr_e sock_cleanup(SOCKET sock,
+                                          enum sockerr_e resval) {
+    closesocket(sock);
+    WSACleanup();
+    return resval;
+}
+
 enum sockerr_e PerformRequest(const char* url,
                               const char* method,
                               const char* data,
@@ -99,20 +106,27 @@ enum sockerr_e PerformRequest(const char* url,
     }
    
     resbuf = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    if (resbuf != 0) return WSA_STARTUP_FAILED;
+    if (resbuf != 0)
+        return WSA_STARTUP_FAILED;
 
     consock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (consock == INVALID_SOCKET) { WSACleanup(); return SOCKET_INIT_FAILED; }
+    if (consock == INVALID_SOCKET) {
+        // no need to call closesocket()
+        WSACleanup();
+        return SOCKET_INIT_FAILED;
+    }
 
     host = gethostbyname(hostname);
-    if (host == NULL) { WSACleanup(); return GETHOSTBYNAME_FAILED; }
+    if (host == NULL)
+        return sock_cleanup(consock, GETHOSTBYNAME_FAILED);
     
     sockaddr.sin_port = htons(80);
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
 
     resbuf = connect(consock, (SOCKADDR*)(&sockaddr), sizeof(sockaddr));
-    if (resbuf != 0) { WSACleanup(); return CONNECT_FAILED; }
+    if (resbuf != 0)
+        return sock_cleanup(consock, CONNECT_FAILED);
 
     resbuf = (int)str_len(data);
     utoa_dec(resbuf, content_len);
@@ -129,7 +143,9 @@ enum sockerr_e PerformRequest(const char* url,
 
     HANDLE heap = GetProcessHeap();
     char* const req_str = HeapAlloc(heap, 0ul, req_str_len * sizeof(char));
-    if (req_str == NULL) return OUT_OF_MEM;
+    if (req_str == NULL)
+        return sock_cleanup(consock, OUT_OF_MEM);
+
     char* it = req_str;
 
     fwd_app_str(&it, method);
@@ -146,15 +162,18 @@ enum sockerr_e PerformRequest(const char* url,
 
     resbuf = send(consock, req_str, (int)req_str_len, 0);
     HeapFree(heap, 0ul, req_str);
-    if (resbuf < 0) { WSACleanup(); return SEND_FAILED; }
+    if (resbuf < 0)
+        return sock_cleanup(consock, SEND_FAILED);
 
     resbuf = recv(consock, out_buf, out_buf_max_size - 1, 0);
-    if (resbuf < 0) { WSACleanup(); return RECV_FAILED; }
+    if (resbuf < 0)
+        return sock_cleanup(consock, RECV_FAILED);
     out_buf[resbuf] = '\0';
 
     resbuf = closesocket(consock);
     WSACleanup();
-    if (resbuf != 0) return CLOSESOCKET_FAILED;
+    if (resbuf != 0)
+        return CLOSESOCKET_FAILED;
     
     return SOCKERR_OK;
 }

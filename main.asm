@@ -50,8 +50,8 @@ TxtBoxMethodPosY       equ ButtonPerformPosY
 
 
 .DATA
-ClassName              db "api-tester", 0
-AppName                db "api-tester", 0
+ClassName              db "http-requester", 0
+AppName                db "HTTP Requester", 0
 TxtFieldCtrlStr        db "EDIT", 0
 ButtonCtrlStr          db "BUTTON", 0
 ButtonPerformText      db "Perform", 0
