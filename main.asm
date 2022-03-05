@@ -1,18 +1,18 @@
 .386
-.model          flat, stdcall
-option          casemap:none
+.model flat, stdcall
+option casemap:none
 
 
-include         \masm32\include\windows.inc
-include         \masm32\include\user32.inc
-include         \masm32\include\kernel32.inc
-include         \masm32\include\gdi32.inc
-include         \masm32\include\ws2_32.inc
+include \masm32\include\windows.inc
+include \masm32\include\user32.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\gdi32.inc
+include \masm32\include\ws2_32.inc
 
-includelib      \masm32\lib\kernel32.lib
-includelib      \masm32\lib\user32.lib
-includelib      \masm32\lib\gdi32.lib
-includelib      \masm32\lib\ws2_32.lib
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+includelib \masm32\lib\gdi32.lib
+includelib \masm32\lib\ws2_32.lib
 
 
 WinMain proto :DWORD, :DWORD, :DWORD, :DWORD
@@ -64,14 +64,14 @@ CaptionError           db "Error", 0
 CaptionWarning         db "Warning", 0
 MsgInputMissing        db "You have to input required info (URL, method) in order to perform a request", 0
 MsgWSAStartupFailed    db "Couldn't perform the request: WSAStartup() failed", 0
-MsgGetHostByNameFailed db "Couldn't perform the request: gethostbyname() failed", 0
+MsgGetHostByNameFailed db "Couldn't perform the request: gethostbyname() failed, please make sure that the URL is correct", 0
 MsgSocketInitFailed    db "Couldn't perform the request: socket() failed", 0
 MsgConnectFailed       db "Couldn't perform the request: connect() failed", 0
 MsgSendFailed          db "Couldn't perform the request: send() failed", 0
 MsgRecvFailed          db "Couldn't receive response from the host: recv() failed, but data has been successfully sent to the host", 0
 MsgCloseSocketFailed   db "Couldn't close the socket properly: closesocket() failed", 0
+MsgOutOfMem            db "Couldn't perform the request: HeapAlloc() failed, request data might be too big", 0
 MsgBugOccured          db "Couldn't perform the request: unknown error", 0
-MsgOutOfMem            db "Couldn't perform the request: HeapAlloc() failed", 0
 
 
 .DATA?

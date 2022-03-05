@@ -147,7 +147,6 @@ enum sockerr_e PerformRequest(const char* url,
         return sock_cleanup(consock, OUT_OF_MEM);
 
     char* it = req_str;
-
     fwd_app_str(&it, method);
     fwd_app_str(&it, " ");
     fwd_app_str(&it, path);
