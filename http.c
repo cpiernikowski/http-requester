@@ -89,6 +89,9 @@ enum sockerr_e PerformRequest(const char* url,
     const char* const chunk1 = " HTTP/1.1\r\nConnection: close\r\nHost: ";
     const char* const chunk2 = "\r\nContent-length: ";
 
+    if (str_len(url) > (127 + 255))
+        return OUT_OF_MEM;
+
 // todo: char port[8];
 
     resbuf = find(url, '/');

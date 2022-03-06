@@ -70,7 +70,7 @@ MsgConnectFailed       db "Couldn't perform the request: connect() failed", 0
 MsgSendFailed          db "Couldn't perform the request: send() failed", 0
 MsgRecvFailed          db "Couldn't receive response from the host: recv() failed, but data has been successfully sent to the host", 0
 MsgCloseSocketFailed   db "Couldn't close the socket properly: closesocket() failed", 0
-MsgOutOfMem            db "Couldn't perform the request: HeapAlloc() failed, request data might be too big", 0
+MsgOutOfMem            db "Couldn't perform the request: HeapAlloc() failed / request or URL might be too long", 0
 MsgBugOccured          db "Couldn't perform the request: unknown error", 0
 
 
