@@ -76,7 +76,6 @@ enum sockerr_e PerformRequest(const char* url,
                               const char* data,
                               char* out_buf,
                               unsigned int out_buf_max_size) {
-    // todo: add custom headers support
     int resbuf;
     WSADATA wsa_data;
     SOCKET consock;
@@ -91,8 +90,6 @@ enum sockerr_e PerformRequest(const char* url,
 
     if (str_len(url) > (127 + 255))
         return OUT_OF_MEM;
-
-// todo: char port[8];
 
     resbuf = find(url, '/');
     if (resbuf > -1) {
