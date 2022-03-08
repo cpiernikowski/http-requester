@@ -92,13 +92,18 @@ enum sockerr_e PerformRequest(const char* url,
         return OUT_OF_MEM;
 
     resbuf = find(url, '/');
+    if (resbuf > 128)
+        return OUT_OF_MEM;
+
     if (resbuf > -1) {
         mem_cpy(hostname, url, resbuf);
         hostname[resbuf] = '\0';
 
-        const unsigned int buf = str_len(url) - resbuf;
-        mem_cpy(path, url + resbuf, buf);
-        path[buf] = '\0';
+        const unsigned int pathlen = str_len(url) - resbuf;
+        if (pathlen > 255)
+            return OUT_OF_MEM;
+        mem_cpy(path, url + resbuf, pathlen);
+        path[pathlen] = '\0';
     } else {
         mem_cpy(hostname, url, str_len(url) + 1);
         path[0] = '/';
