@@ -88,9 +88,6 @@ enum sockerr_e PerformRequest(const char* url,
     const char* const chunk1 = " HTTP/1.1\r\nConnection: close\r\nHost: ";
     const char* const chunk2 = "\r\nContent-length: ";
 
-    if (str_len(url) > (127 + 255))
-        return OUT_OF_MEM;
-
     resbuf = find(url, '/');
     if (resbuf > 128)
         return OUT_OF_MEM;
@@ -105,7 +102,10 @@ enum sockerr_e PerformRequest(const char* url,
         mem_cpy(path, url + resbuf, pathlen);
         path[pathlen] = '\0';
     } else {
-        mem_cpy(hostname, url, str_len(url) + 1);
+        const unsigned int urllen = str_len(url);
+        if (urllen > 127)
+            return OUT_OF_MEM;
+        mem_cpy(hostname, url, urllen + 1);
         path[0] = '/';
         path[1] = '\0';
     }
