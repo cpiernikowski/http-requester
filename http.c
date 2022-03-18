@@ -38,8 +38,7 @@ static void utoa_dec(unsigned int num, char* buf) {
     }
 
     while (num != 0) {
-        int rem = num % 10;
-        buf[i++] = rem > 9 ? rem - 10 + 'a' : rem + '0';
+        buf[i++] = '0' + (num % 10);
         num /= 10;
     }
 
@@ -178,6 +177,6 @@ enum sockerr_e PerformRequest(const char* url,
     WSACleanup();
     if (resbuf != 0)
         return CLOSESOCKET_FAILED;
-    
+
     return SOCKERR_OK;
 }
