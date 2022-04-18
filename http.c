@@ -1,23 +1,25 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-static int find(const char* str, char c) {
-    for (int i = 0; str[i]; ++i)
+typedef unsigned long long u64;
+
+static u64 find(const char* str, char c) {
+    for (int i = 0; str[i] != '\0'; ++i)
         if (str[i] == c)
             return i;
-    return -1;
+    return (u64)-1;
 }
 
-static unsigned int str_len(const char* str) {
-    unsigned int i = 0;
-    while (str[i]) ++i;
+static u64 str_len(const char* str) {
+    u64 i = 0;
+    while (str[i] != '\0') ++i;
     return i;
 }
 
 static void mem_cpy(unsigned char* dest,
                     const unsigned char* src,
-                    unsigned int count) {
-    while (count--) *dest++ = *src++;
+                    u64 count) {
+    while (count-- > 0) *dest++ = *src++;
 }
 
 static void fwd_app_str(char** in_out_it,
@@ -28,7 +30,7 @@ static void fwd_app_str(char** in_out_it,
     }
 }
 
-static void utoa_dec(unsigned int num, char* buf) {
+static void utoa_dec(u64 num, char* buf) {
     int i = 0;
 
     if (num == 0) {
@@ -87,21 +89,21 @@ enum sockerr_e PerformRequest(const char* url,
     const char* const chunk1 = " HTTP/1.1\r\nConnection: close\r\nHost: ";
     const char* const chunk2 = "\r\nContent-length: ";
 
-    resbuf = find(url, '/');
-    if (resbuf > 128)
+    const u64 path_start_pos = find(url, '/');
+    if (path_start_pos > 128)
         return OUT_OF_MEM;
 
-    if (resbuf > -1) {
-        mem_cpy(hostname, url, resbuf);
-        hostname[resbuf] = '\0';
+    if (path_start_pos != (u64)-1) {
+        mem_cpy(hostname, url, path_start_pos);
+        hostname[path_start_pos] = '\0';
 
-        const unsigned int pathlen = str_len(url) - resbuf;
+        const u64 pathlen = str_len(url) - path_start_pos;
         if (pathlen > 255)
             return OUT_OF_MEM;
-        mem_cpy(path, url + resbuf, pathlen);
+        mem_cpy(path, url + path_start_pos, pathlen);
         path[pathlen] = '\0';
     } else {
-        const unsigned int urllen = str_len(url);
+        const u64 urllen = str_len(url);
         if (urllen > 127)
             return OUT_OF_MEM;
         mem_cpy(hostname, url, urllen + 1);
@@ -132,18 +134,18 @@ enum sockerr_e PerformRequest(const char* url,
     if (resbuf != 0)
         return sock_cleanup(consock, CONNECT_FAILED);
 
-    resbuf = (int)str_len(data);
-    utoa_dec(resbuf, content_len);
+    const u64 data_str_len = str_len(data);
+    utoa_dec(data_str_len, content_len);
 
-    const unsigned int req_str_len = resbuf
-                                   + str_len(chunk1)
-                                   + str_len(chunk2)
-                                   + str_len(content_len)
-                                   + str_len(hostname)
-                                   + str_len(method)
-                                   + str_len(path)
-                                   + str_len(url)
-                                   + 8; // " ", "\r\n\r\n", "\r\n\0"
+    const u64 req_str_len = data_str_len
+                          + str_len(chunk1)
+                          + str_len(chunk2)
+                          + str_len(content_len)
+                          + str_len(hostname)
+                          + str_len(method)
+                          + str_len(path)
+                          + str_len(url)
+                          + 8; // " ", "\r\n\r\n", "\r\n\0"
 
     HANDLE heap = GetProcessHeap();
     char* const req_str = HeapAlloc(heap, 0ul, req_str_len * sizeof(char));
