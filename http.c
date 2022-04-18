@@ -90,7 +90,7 @@ enum sockerr_e PerformRequest(const char* url,
     const char* const chunk2 = "\r\nContent-length: ";
 
     const u64 path_start_pos = find(url, '/');
-    if (path_start_pos > 128)
+    if (path_start_pos > 128 && path_start_pos != (u64)-1)
         return OUT_OF_MEM;
 
     if (path_start_pos != (u64)-1) {
