@@ -17,7 +17,7 @@ static SIZE_T StrLen(PCSTR str) {
 static VOID MemCpy(BYTE* dest,
                    CONST BYTE* src,
                    SIZE_T count) {
-    while (count-- > 0) *dest++ = *src++;
+    while (count-- > 0ull) *dest++ = *src++;
 }
 
 static VOID FwdAppStr(PZPSTR in_out_it, PCSTR src) {
