@@ -2,14 +2,14 @@
 #include <WS2tcpip.h>
 
 static SIZE_T Find(PCSTR str, CHAR c) {
-    for (SIZE_T i = 0; str[i] != '\0'; ++i)
+    for (SIZE_T i = 0ull; str[i] != '\0'; ++i)
         if (str[i] == c)
             return i;
     return (SIZE_T)-1;
 }
 
 static SIZE_T StrLen(PCSTR str) {
-    SIZE_T i = 0;
+    SIZE_T i = 0ull;
     while (str[i] != '\0') ++i;
     return i;
 }
@@ -28,15 +28,15 @@ static VOID FwdAppStr(PZPSTR in_out_it, PCSTR src) {
 }
 
 static VOID UtoaDec(SIZE_T num, PSTR buf) {
-    SIZE_T i = 0;
+    SIZE_T i = 0ull;
 
-    if (num == 0) {
+    if (num == 0ull) {
         buf[i++] = '0';
         buf[i] = '\0';
         return;
     }
 
-    while (num != 0) {
+    while (num != 0ull) {
         buf[i++] = '0' + (num % 10ull);
         num /= 10ull;
     }
@@ -87,7 +87,7 @@ enum sockerr_e PerformRequest(PCSTR url,
     CONST PCSTR chunk2 = "\r\nContent-length: ";
 
     CONST SIZE_T path_start_pos = Find(url, '/');
-    if (path_start_pos > 128 && path_start_pos != (SIZE_T)-1)
+    if (path_start_pos > 128ull && path_start_pos != (SIZE_T)-1)
         return OUT_OF_MEM;
 
     if (path_start_pos != (SIZE_T)-1) {
@@ -95,13 +95,13 @@ enum sockerr_e PerformRequest(PCSTR url,
         hostname[path_start_pos] = '\0';
 
         CONST SIZE_T pathlen = StrLen(url) - path_start_pos;
-        if (pathlen > 255)
+        if (pathlen > 255ull)
             return OUT_OF_MEM;
         MemCpy(path, url + path_start_pos, pathlen);
         path[pathlen] = '\0';
     } else {
         CONST SIZE_T urllen = StrLen(url);
-        if (urllen > 127)
+        if (urllen > 127ull)
             return OUT_OF_MEM;
         MemCpy(hostname, url, urllen + 1);
         path[0] = '/';
@@ -123,9 +123,9 @@ enum sockerr_e PerformRequest(PCSTR url,
     if (host == NULL)
         return SockCleanup(consock, GETHOSTBYNAME_FAILED);
     
-    sockaddr.sin_port = htons(80);
+    sockaddr.sin_port = htons((USHORT)80);
     sockaddr.sin_family = AF_INET;
-    sockaddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
+    sockaddr.sin_addr.s_addr = *((ULONG*)host->h_addr);
 
     resbuf = connect(consock, (SOCKADDR*)(&sockaddr), sizeof(sockaddr));
     if (resbuf != 0)
